@@ -67,8 +67,30 @@ const getAllNotes = async (req, res) => {
   }
 };
 
+// 4) GET /api/notes/:id
+const getNoteById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return sendResponse(res, 400, false, "Invalid Object ID");
+    }
+
+    const note = await Note.findById(id);
+
+    if (!note) {
+      return sendResponse(res, 404, false, "Note not found");
+    }
+
+    return sendResponse(res, 200, true, "Note fetched successfully", note);
+  } catch (error) {
+    return sendResponse(res, 500, false, "Internal Server Error");
+  }
+};
+
 module.exports = {
   createNote,
   bulkCreateNotes,
   getAllNotes,
+  getNoteById,
 };
