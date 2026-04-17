@@ -14,8 +14,12 @@ const createNote = async (req, res) => {
   try {
     const { id, title, content, category, isPinned } = req.body;
 
-    if (!id || !title || !content) {
+    if (id === undefined || !title || !content) {
       return sendResponse(res, 400, false, "id, title and content are required fields");
+    }
+
+    if (isNaN(id)) {
+      return sendResponse(res, 400, false, "id must be a number");
     }
 
     const note = new Note({ _id: id, title, content, category, isPinned });
@@ -42,8 +46,15 @@ const bulkCreateNotes = async (req, res) => {
       return sendResponse(res, 400, false, "notes array is missing or empty");
     }
 
-    // Ensure all notes have an _id in the body or handle it
-    const notesToInsert = notes.map(n => ({ ...n, _id: n.id || n._id }));
+    // Ensure all notes have an _id in the body and cast/validate
+    const notesToInsert = [];
+    for (const n of notes) {
+      const id = n.id || n._id;
+      if (id === undefined || isNaN(id)) {
+        return sendResponse(res, 400, false, "Each note in bulk must have a numeric id");
+      }
+      notesToInsert.push({ ...n, _id: id });
+    }
 
     const createdNotes = await Note.insertMany(notesToInsert);
 
@@ -80,6 +91,10 @@ const getNoteById = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (isNaN(id)) {
+      return sendResponse(res, 400, false, "Invalid ID format. Must be a number.");
+    }
+
     const note = await Note.findById(id);
 
     if (!note) {
@@ -88,6 +103,9 @@ const getNoteById = async (req, res) => {
 
     return sendResponse(res, 200, true, "Note fetched successfully", note);
   } catch (error) {
+    if (error.name === "CastError") {
+      return sendResponse(res, 400, false, "Invalid ID format");
+    }
     return sendResponse(res, 500, false, "Internal Server Error");
   }
 };
@@ -96,6 +114,10 @@ const getNoteById = async (req, res) => {
 const replaceNote = async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (isNaN(id)) {
+      return sendResponse(res, 400, false, "Invalid ID format. Must be a number.");
+    }
 
     const note = await Note.findByIdAndUpdate(
       id,
@@ -109,6 +131,9 @@ const replaceNote = async (req, res) => {
 
     return sendResponse(res, 200, true, "Note replaced successfully", note);
   } catch (error) {
+    if (error.name === "CastError") {
+      return sendResponse(res, 400, false, "Invalid ID format");
+    }
     if (error.name === "ValidationError") {
       return sendResponse(res, 400, false, error.message);
     }
@@ -120,6 +145,10 @@ const replaceNote = async (req, res) => {
 const updateNote = async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (isNaN(id)) {
+      return sendResponse(res, 400, false, "Invalid ID format. Must be a number.");
+    }
 
     if (Object.keys(req.body).length === 0) {
       return sendResponse(res, 400, false, "No fields provided to update");
@@ -137,6 +166,9 @@ const updateNote = async (req, res) => {
 
     return sendResponse(res, 200, true, "Note updated successfully", note);
   } catch (error) {
+    if (error.name === "CastError") {
+      return sendResponse(res, 400, false, "Invalid ID format");
+    }
     if (error.name === "ValidationError") {
       return sendResponse(res, 400, false, error.message);
     }
@@ -149,6 +181,10 @@ const deleteNote = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (isNaN(id)) {
+      return sendResponse(res, 400, false, "Invalid ID format. Must be a number.");
+    }
+
     const note = await Note.findByIdAndDelete(id);
 
     if (!note) {
@@ -157,6 +193,9 @@ const deleteNote = async (req, res) => {
 
     return sendResponse(res, 200, true, "Note deleted successfully", note);
   } catch (error) {
+    if (error.name === "CastError") {
+      return sendResponse(res, 400, false, "Invalid ID format");
+    }
     return sendResponse(res, 500, false, "Internal Server Error");
   }
 };
@@ -170,7 +209,14 @@ const bulkDeleteNotes = async (req, res) => {
       return sendResponse(res, 400, false, "ids array is missing or empty");
     }
 
-    const result = await Note.deleteMany({ _id: { $in: ids } });
+    // Cast IDs to numbers
+    const numericIds = ids.map(id => Number(id)).filter(id => !isNaN(id));
+
+    if (numericIds.length === 0) {
+      return sendResponse(res, 400, false, "No valid numeric IDs provided");
+    }
+
+    const result = await Note.deleteMany({ _id: { $in: numericIds } });
 
     return sendResponse(
       res,
