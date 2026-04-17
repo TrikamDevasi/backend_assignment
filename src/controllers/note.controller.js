@@ -31,6 +31,33 @@ const createNote = async (req, res) => {
   }
 };
 
+// 2) POST /api/notes/bulk
+const bulkCreateNotes = async (req, res) => {
+  try {
+    const { notes } = req.body;
+
+    if (!notes || !Array.isArray(notes) || notes.length === 0) {
+      return sendResponse(res, 400, false, "notes array is missing or empty");
+    }
+
+    const createdNotes = await Note.insertMany(notes);
+
+    return sendResponse(
+      res,
+      201,
+      true,
+      `${createdNotes.length} notes created successfully`,
+      createdNotes
+    );
+  } catch (error) {
+    if (error.name === "ValidationError") {
+      return sendResponse(res, 400, false, error.message);
+    }
+    return sendResponse(res, 500, false, "Internal Server Error");
+  }
+};
+
 module.exports = {
   createNote,
+  bulkCreateNotes,
 };
