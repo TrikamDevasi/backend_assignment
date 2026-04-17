@@ -148,6 +148,27 @@ const updateNote = async (req, res) => {
   }
 };
 
+// 7) DELETE /api/notes/:id
+const deleteNote = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return sendResponse(res, 400, false, "Invalid Object ID");
+    }
+
+    const note = await Note.findByIdAndDelete(id);
+
+    if (!note) {
+      return sendResponse(res, 404, false, "Note not found");
+    }
+
+    return sendResponse(res, 200, true, "Note deleted successfully", note);
+  } catch (error) {
+    return sendResponse(res, 500, false, "Internal Server Error");
+  }
+};
+
 module.exports = {
   createNote,
   bulkCreateNotes,
@@ -155,4 +176,5 @@ module.exports = {
   getNoteById,
   replaceNote,
   updateNote,
+  deleteNote,
 };
