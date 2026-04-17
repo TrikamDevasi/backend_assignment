@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { createNote, bulkCreateNotes, getAllNotes, getNoteById, replaceNote, updateNote, deleteNote } = require("../controllers/note.controller");
+const { createNote, bulkCreateNotes, getAllNotes, getNoteById, replaceNote, updateNote, deleteNote, bulkDeleteNotes } = require("../controllers/note.controller");
 
 // 1) POST /api/notes
 router.post("/", createNote);
@@ -19,6 +19,9 @@ router.put("/:id", replaceNote);
 
 // 6) PATCH /api/notes/:id
 router.patch("/:id", updateNote);
+
+// 8) DELETE /api/notes/bulk - Place this before /:id so it doesn't match as an ID
+router.delete("/bulk", bulkDeleteNotes);
 
 // 7) DELETE /api/notes/:id
 router.delete("/:id", deleteNote);

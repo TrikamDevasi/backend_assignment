@@ -169,6 +169,29 @@ const deleteNote = async (req, res) => {
   }
 };
 
+// 8) DELETE /api/notes/bulk
+const bulkDeleteNotes = async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return sendResponse(res, 400, false, "ids array is missing or empty");
+    }
+
+    const result = await Note.deleteMany({ _id: { $in: ids } });
+
+    return sendResponse(
+      res,
+      200,
+      true,
+      `${result.deletedCount} notes deleted successfully`,
+      null
+    );
+  } catch (error) {
+    return sendResponse(res, 500, false, "Internal Server Error");
+  }
+};
+
 module.exports = {
   createNote,
   bulkCreateNotes,
@@ -177,4 +200,5 @@ module.exports = {
   replaceNote,
   updateNote,
   deleteNote,
+  bulkDeleteNotes,
 };
