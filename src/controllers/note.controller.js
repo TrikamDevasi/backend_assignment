@@ -116,10 +116,43 @@ const replaceNote = async (req, res) => {
   }
 };
 
+// 6) PATCH /api/notes/:id
+const updateNote = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return sendResponse(res, 400, false, "Invalid Object ID");
+    }
+
+    if (Object.keys(req.body).length === 0) {
+      return sendResponse(res, 400, false, "No fields provided to update");
+    }
+
+    const note = await Note.findByIdAndUpdate(
+      id,
+      { $set: req.body },
+      { new: true, runValidators: true }
+    );
+
+    if (!note) {
+      return sendResponse(res, 404, false, "Note not found");
+    }
+
+    return sendResponse(res, 200, true, "Note updated successfully", note);
+  } catch (error) {
+    if (error.name === "ValidationError") {
+      return sendResponse(res, 400, false, error.message);
+    }
+    return sendResponse(res, 500, false, "Internal Server Error");
+  }
+};
+
 module.exports = {
   createNote,
   bulkCreateNotes,
   getAllNotes,
   getNoteById,
   replaceNote,
+  updateNote,
 };

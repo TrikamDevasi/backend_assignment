@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { createNote, bulkCreateNotes, getAllNotes, getNoteById, replaceNote } = require("../controllers/note.controller");
+const { createNote, bulkCreateNotes, getAllNotes, getNoteById, replaceNote, updateNote } = require("../controllers/note.controller");
 
 // 1) POST /api/notes
 router.post("/", createNote);
@@ -16,5 +16,8 @@ router.get("/:id", getNoteById);
 
 // 5) PUT /api/notes/:id
 router.put("/:id", replaceNote);
+
+// 6) PATCH /api/notes/:id
+router.patch("/:id", updateNote);
 
 module.exports = router;
