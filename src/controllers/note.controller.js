@@ -1,4 +1,3 @@
-const mongoose = require("mongoose");
 const Note = require("../models/note.model");
 
 // Helper to format responses
@@ -13,17 +12,20 @@ const sendResponse = (res, statusCode, success, message, data = null) => {
 // 1) POST /api/notes
 const createNote = async (req, res) => {
   try {
-    const { title, content, category, isPinned } = req.body;
+    const { id, title, content, category, isPinned } = req.body;
 
-    if (!title || !content) {
-      return sendResponse(res, 400, false, "title and content are required fields");
+    if (!id || !title || !content) {
+      return sendResponse(res, 400, false, "id, title and content are required fields");
     }
 
-    const note = new Note({ title, content, category, isPinned });
+    const note = new Note({ _id: id, title, content, category, isPinned });
     await note.save();
 
     return sendResponse(res, 201, true, "Note created successfully", note);
   } catch (error) {
+    if (error.code === 11000) {
+      return sendResponse(res, 400, false, "Note with this ID already exists");
+    }
     if (error.name === "ValidationError") {
       return sendResponse(res, 400, false, error.message);
     }
@@ -40,7 +42,10 @@ const bulkCreateNotes = async (req, res) => {
       return sendResponse(res, 400, false, "notes array is missing or empty");
     }
 
-    const createdNotes = await Note.insertMany(notes);
+    // Ensure all notes have an _id in the body or handle it
+    const notesToInsert = notes.map(n => ({ ...n, _id: n.id || n._id }));
+
+    const createdNotes = await Note.insertMany(notesToInsert);
 
     return sendResponse(
       res,
@@ -50,6 +55,9 @@ const bulkCreateNotes = async (req, res) => {
       createdNotes
     );
   } catch (error) {
+    if (error.code === 11000) {
+      return sendResponse(res, 400, false, "One or more notes have duplicate IDs");
+    }
     if (error.name === "ValidationError") {
       return sendResponse(res, 400, false, error.message);
     }
@@ -72,10 +80,6 @@ const getNoteById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return sendResponse(res, 400, false, "Invalid Object ID");
-    }
-
     const note = await Note.findById(id);
 
     if (!note) {
@@ -92,10 +96,6 @@ const getNoteById = async (req, res) => {
 const replaceNote = async (req, res) => {
   try {
     const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return sendResponse(res, 400, false, "Invalid Object ID");
-    }
 
     const note = await Note.findByIdAndUpdate(
       id,
@@ -120,10 +120,6 @@ const replaceNote = async (req, res) => {
 const updateNote = async (req, res) => {
   try {
     const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return sendResponse(res, 400, false, "Invalid Object ID");
-    }
 
     if (Object.keys(req.body).length === 0) {
       return sendResponse(res, 400, false, "No fields provided to update");
@@ -152,10 +148,6 @@ const updateNote = async (req, res) => {
 const deleteNote = async (req, res) => {
   try {
     const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return sendResponse(res, 400, false, "Invalid Object ID");
-    }
 
     const note = await Note.findByIdAndDelete(id);
 
