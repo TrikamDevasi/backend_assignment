@@ -11,7 +11,7 @@ app.use(express.json()); // parse JSON requests
 
 // Middleware to handle JSON parsing errors
 app.use((err, req, res, next) => {
-  if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+  if (req.method !== "GET" && err instanceof SyntaxError && err.status === 400 && "body" in err) {
     return res.status(400).json({
       success: false,
       message: "Invalid JSON format or empty body",
