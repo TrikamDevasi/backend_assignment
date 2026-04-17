@@ -8,7 +8,7 @@ const noteSchema = new mongoose.Schema(
     category: { type: String, enum: ["work", "personal", "study"], default: "personal" },
     isPinned: { type: Boolean, default: false },
   },
-  { timestamps: true, _id: false }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("Note", noteSchema);
